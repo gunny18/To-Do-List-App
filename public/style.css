@@ -1,0 +1,60 @@
+body {
+  /* height: 1000px; */
+  background-color: #87a2fb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.taskContainer {
+  background-color: #99FEFF;
+  display: flex;
+  flex-direction: column;
+  /* align-items: center; */
+  justify-content: center;
+  padding: 20px;
+  border: 1px solid rgb(113, 113, 234);
+  border-radius: 30px;
+  box-shadow: -10px -10px 5px #7676ce;
+}
+
+.taskContainer h1 {
+  text-align: center;
+}
+
+.to-do-list-tasks {
+  list-style: none;
+  text-align: left;
+  padding: 15% 15% 0 15%;
+}
+
+.to-do-list-tasks li {
+  padding: 5% 0;
+  font-size: 1rem;
+  font-family: cursive;
+}
+
+.checkbox {
+  border-radius: 50%;
+}
+
+.addTaskForm {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px;
+}
+
+.addTaskFormText {
+  width: 50%;
+}
+
+.listFooter{
+  padding: 50px 0;
+}
+
+.listFooter p{
+  font-size: 1.2rem;
+}

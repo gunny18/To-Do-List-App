@@ -1,0 +1,40 @@
+<%- include("layouts/header") %>
+<div class="taskContainer">
+  <h1><%=listTitle%></h1>
+  <ul class="to-do-list-tasks">
+    <% for(let task of newTasks){%>
+    <li>
+      <form action="/tasks/<%=task._id%>" method="post">
+        <div class="checkBody">
+          <input
+            type="checkbox"
+            name="task"
+            id="task<%= newTasks.indexOf(task) %>"
+            class="checkbox form-check-input"
+            onchange="this.form.submit()"
+          />
+          <label
+            for="task<%= newTasks.indexOf(task) %>"
+            class="form-check-label"
+            ><%=task.name%></label
+          >
+          <!-- <button>Finish Task</button> -->
+        </div>
+        <input type="hidden" name="listTitle" value="<%= listTitle %>" />
+      </form>
+    </li>
+    <%}%>
+  </ul>
+  <form action="/" method="post" class="addTaskForm">
+    <input type="text" class="form-control addTaskFormText" name="task" id="task" placeholder="Add New Item" />
+    <button
+      class="add-task btn btn-primary"
+      name="addTaskBtn"
+      value="<%= listTitle %>"
+    >
+      Add Task
+    </button>
+  </form>
+</div>
+
+<%- include("layouts/footer") %>
