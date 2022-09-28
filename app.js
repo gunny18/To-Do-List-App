@@ -11,18 +11,12 @@ const { Item, List } = require("./populateItemsDocDB");
 //   .then(() => console.log("Connected to DB"))
 //   .catch((e) => console.log(e));
 
-
 mongoose
   .connect(
-    "mongodb+srv://Gunny38:nCFS82SUgfZjZ7uA@cluster0.ypuepsl.mongodb.net/todolistDB",
+    "mongodb+srv://Gunny38:nCFS82SUgfZjZ7uA@cluster0.ypuepsl.mongodb.net/todolistDB"
   )
   .then(() => console.log("Connected to DB"))
   .catch((e) => console.log(e));
-
-
-
-
-
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "/views"));
@@ -95,6 +89,11 @@ app.get("/:listName", async (req, res) => {
   }
 });
 
-app.listen(3000, () => {
+let port = process.env.PORT;
+if (port == null || port == "") {
+  port = 3000;
+}
+
+app.listen(port, () => {
   console.log("Listening on port 3000");
 });
