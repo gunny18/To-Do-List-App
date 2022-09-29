@@ -1,3 +1,7 @@
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
+
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
@@ -5,17 +9,21 @@ const _ = require("lodash");
 const path = require("path");
 const { itemSchema } = require("./itemSchema");
 const { Item, List } = require("./populateItemsDocDB");
-const { DB_URL } = require("./secrets");
+const { AppError } = require("./AppError");
 
 // mongoose
 //   .connect("mongodb://localhost:27017/todolistDB")
 //   .then(() => console.log("Connected to DB"))
 //   .catch((e) => console.log(e));
 
+const db_url = process.env.DB_URL;
+// console.log(db_url)
+
 mongoose
-  .connect(DB_URL)
+  .connect(db_url)
   .then(() => console.log("Connected to DB"))
   .catch((e) => console.log(e));
+
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "/views"));
@@ -26,79 +34,113 @@ app.use(express.urlencoded({ extended: true }));
 
 //middleware to check if its today list or custom list route.
 const checkListToUpdate = async (req, res, next) => {
-  const { task, addTaskBtn } = req.body;
-  if (addTaskBtn != "Today") {
-    await List.findOneAndUpdate(
-      { name: addTaskBtn },
-      { $push: { items: { name: task } } }
-    );
-    res.redirect(`/lists/${addTaskBtn}`);
-  } else {
-    return next();
+  try {
+    const { task, addTaskBtn } = req.body;
+    if (addTaskBtn != "Today") {
+      await List.findOneAndUpdate(
+        { name: addTaskBtn },
+        { $push: { items: { name: task } } }
+      );
+      res.redirect(`/lists/${addTaskBtn}`);
+    } else {
+      return next();
+    }
+  } catch (e) {
+    next(e);
   }
 };
 
 //middle ware to check list and delete item.
 const checkListAndDelete = async (req, res, next) => {
-  const { listTitle } = req.body;
-  const { taskID } = req.params;
-  if (listTitle != "Today") {
-    if (!req.body.task) {
-      res.redirect(`/lists/${listTitle}`);
+  try {
+    const { listTitle } = req.body;
+    const { taskID } = req.params;
+    if (listTitle != "Today") {
+      if (!req.body.task) {
+        res.redirect(`/lists/${listTitle}`);
+      } else {
+        await List.findOneAndUpdate(
+          { name: listTitle },
+          { $pull: { items: { _id: taskID } } }
+        );
+        res.redirect(`/lists/${listTitle}`);
+      }
     } else {
-      await List.findOneAndUpdate(
-        { name: listTitle },
-        { $pull: { items: { _id: taskID } } }
-      );
-      res.redirect(`/lists/${listTitle}`);
+      return next();
     }
-  } else {
-    return next();
+  } catch (e) {
+    next(e);
   }
 };
 
 app.get("/", async (req, res) => {
-  const tasks = await Item.find({});
-  res.render("lists", { listTitle: "Today", newTasks: tasks });
+  try {
+    const tasks = await Item.find({});
+    res.render("lists", { listTitle: "Today", newTasks: tasks });
+  } catch (e) {
+    next(e);
+  }
 });
 
 app.post("/", checkListToUpdate, async (req, res) => {
-  const { task } = req.body;
-  await Item.insertMany({ name: task });
-  res.redirect("/");
+  try {
+    const { task } = req.body;
+    await Item.insertMany({ name: task });
+    res.redirect("/");
+  } catch (e) {
+    next(e);
+  }
 });
 
 app.post("/tasks/:taskID", checkListAndDelete, async (req, res) => {
-  const { taskID } = req.params;
-  if (!req.body.task) {
-    res.redirect("/");
-  } else if (req.body.task == "on") {
-    await Item.findByIdAndDelete(taskID);
-    res.redirect("/");
+  try {
+    const { taskID } = req.params;
+    if (!req.body.task) {
+      res.redirect("/");
+    } else if (req.body.task == "on") {
+      await Item.findByIdAndDelete(taskID);
+      res.redirect("/");
+    }
+  } catch (e) {
+    next(e);
   }
 });
 
 app.get("/lists/:listName", async (req, res) => {
-  const listName = _.capitalize(req.params.listName);
-  const findList = await List.findOne({ name: listName });
-  if (findList) {
-    res.render("lists", { listTitle: findList.name, newTasks: findList.items });
-  } else {
-    const newList = new List({
-      name: listName,
-      items: [
-        { name: "Buy Food" },
-        { name: "Cook Food" },
-        { name: "Eat Food" },
-      ],
-    });
-    await newList.save();
-    res.render("lists", { listTitle: listName, newTasks: newList.items });
+  try {
+    const listName = _.capitalize(req.params.listName);
+    const findList = await List.findOne({ name: listName });
+    if (findList) {
+      res.render("lists", {
+        listTitle: findList.name,
+        newTasks: findList.items,
+      });
+    } else {
+      const newList = new List({
+        name: listName,
+        items: [
+          { name: "Buy Food" },
+          { name: "Cook Food" },
+          { name: "Eat Food" },
+        ],
+      });
+      await newList.save();
+      res.render("lists", { listTitle: listName, newTasks: newList.items });
+    }
+  } catch (e) {
+    next(e);
   }
 });
 
+//A last ditch, middleware.
 app.use((req, res) => {
   res.render("notFound");
+});
+
+//Error Handler
+app.use((err, req, res, next) => {
+  const { status = 500, message = "Something went wrong" } = err;
+  res.status(status).send(message);
 });
 
 let port = process.env.PORT;
