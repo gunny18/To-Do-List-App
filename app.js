@@ -24,7 +24,6 @@ mongoose
   .then(() => console.log("Connected to DB"))
   .catch((e) => console.log(e));
 
-
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "/views"));
 
@@ -34,101 +33,77 @@ app.use(express.urlencoded({ extended: true }));
 
 //middleware to check if its today list or custom list route.
 const checkListToUpdate = async (req, res, next) => {
-  try {
-    const { task, addTaskBtn } = req.body;
-    if (addTaskBtn != "Today") {
-      await List.findOneAndUpdate(
-        { name: addTaskBtn },
-        { $push: { items: { name: task } } }
-      );
-      res.redirect(`/lists/${addTaskBtn}`);
-    } else {
-      return next();
-    }
-  } catch (e) {
-    next(e);
+  const { task, addTaskBtn } = req.body;
+  if (addTaskBtn != "Today") {
+    await List.findOneAndUpdate(
+      { name: addTaskBtn },
+      { $push: { items: { name: task } } }
+    );
+    res.redirect(`/lists/${addTaskBtn}`);
+  } else {
+    return next();
   }
 };
 
 //middle ware to check list and delete item.
 const checkListAndDelete = async (req, res, next) => {
-  try {
-    const { listTitle } = req.body;
-    const { taskID } = req.params;
-    if (listTitle != "Today") {
-      if (!req.body.task) {
-        res.redirect(`/lists/${listTitle}`);
-      } else {
-        await List.findOneAndUpdate(
-          { name: listTitle },
-          { $pull: { items: { _id: taskID } } }
-        );
-        res.redirect(`/lists/${listTitle}`);
-      }
+  const { listTitle } = req.body;
+  const { taskID } = req.params;
+  if (listTitle != "Today") {
+    if (!req.body.task) {
+      res.redirect(`/lists/${listTitle}`);
     } else {
-      return next();
+      await List.findOneAndUpdate(
+        { name: listTitle },
+        { $pull: { items: { _id: taskID } } }
+      );
+      res.redirect(`/lists/${listTitle}`);
     }
-  } catch (e) {
-    next(e);
+  } else {
+    return next();
   }
 };
 
 app.get("/", async (req, res) => {
-  try {
-    const tasks = await Item.find({});
-    res.render("lists", { listTitle: "Today", newTasks: tasks });
-  } catch (e) {
-    next(e);
-  }
+  const tasks = await Item.find({});
+  res.render("lists", { listTitle: "Today", newTasks: tasks });
 });
 
 app.post("/", checkListToUpdate, async (req, res) => {
-  try {
-    const { task } = req.body;
-    await Item.insertMany({ name: task });
-    res.redirect("/");
-  } catch (e) {
-    next(e);
-  }
+  const { task } = req.body;
+  await Item.insertMany({ name: task });
+  res.redirect("/");
 });
 
 app.post("/tasks/:taskID", checkListAndDelete, async (req, res) => {
-  try {
-    const { taskID } = req.params;
-    if (!req.body.task) {
-      res.redirect("/");
-    } else if (req.body.task == "on") {
-      await Item.findByIdAndDelete(taskID);
-      res.redirect("/");
-    }
-  } catch (e) {
-    next(e);
+  const { taskID } = req.params;
+  if (!req.body.task) {
+    res.redirect("/");
+  } else if (req.body.task == "on") {
+    await Item.findByIdAndDelete(taskID);
+    res.redirect("/");
   }
 });
 
 app.get("/lists/:listName", async (req, res) => {
-  try {
-    const listName = _.capitalize(req.params.listName);
-    const findList = await List.findOne({ name: listName });
-    if (findList) {
-      res.render("lists", {
-        listTitle: findList.name,
-        newTasks: findList.items,
-      });
-    } else {
-      const newList = new List({
-        name: listName,
-        items: [
-          { name: "Buy Food" },
-          { name: "Cook Food" },
-          { name: "Eat Food" },
-        ],
-      });
-      await newList.save();
-      res.render("lists", { listTitle: listName, newTasks: newList.items });
-    }
-  } catch (e) {
-    next(e);
+  const listName = _.capitalize(req.params.listName);
+  const findList = await List.findOne({ name: listName });
+  if (findList) {
+    res.render("lists", {
+      listTitle: findList.name,
+      newTasks: findList.items,
+    });
+  } else {
+    const newList = new List({
+      name: listName,
+      items: [
+        { name: "Buy Food" },
+        { name: "Cook Food" },
+        { name: "Eat Food" },
+      ],
+    });
+    await newList.save();
+    res.render("lists", { listTitle: listName, newTasks: newList.items });
   }
 });
 
