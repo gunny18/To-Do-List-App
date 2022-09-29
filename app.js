@@ -7,9 +7,8 @@ const app = express();
 const mongoose = require("mongoose");
 const _ = require("lodash");
 const path = require("path");
-const { itemSchema } = require("./itemSchema");
 const { Item, List } = require("./populateItemsDocDB");
-const { AppError } = require("./AppError");
+
 
 // mongoose
 //   .connect("mongodb://localhost:27017/todolistDB")
