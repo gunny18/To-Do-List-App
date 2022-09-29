@@ -5,6 +5,7 @@ const _ = require("lodash");
 const path = require("path");
 const { itemSchema } = require("./itemSchema");
 const { Item, List } = require("./populateItemsDocDB");
+const { DB_URL } = require("./secrets");
 
 // mongoose
 //   .connect("mongodb://localhost:27017/todolistDB")
@@ -12,7 +13,7 @@ const { Item, List } = require("./populateItemsDocDB");
 //   .catch((e) => console.log(e));
 
 mongoose
-  .connect(process.env.DB_URL)
+  .connect(DB_URL)
   .then(() => console.log("Connected to DB"))
   .catch((e) => console.log(e));
 
@@ -23,52 +24,61 @@ app.use(express.static(path.join(__dirname, "/public")));
 
 app.use(express.urlencoded({ extended: true }));
 
-app.get("/", async (req, res) => {
-  const tasks = await Item.find({});
-  res.render("lists", { listTitle: "Today", newTasks: tasks });
-});
-
-app.post("/", async (req, res) => {
-  // console.log(req.body);
+//middleware to check if its today list or custom list route.
+const checkListToUpdate = async (req, res, next) => {
   const { task, addTaskBtn } = req.body;
-  if (addTaskBtn == "Today") {
-    await Item.insertMany({ name: task });
-    res.redirect("/");
-  } else {
+  if (addTaskBtn != "Today") {
     await List.findOneAndUpdate(
       { name: addTaskBtn },
       { $push: { items: { name: task } } }
     );
-    res.redirect(`/${addTaskBtn}`);
+    res.redirect(`/lists/${addTaskBtn}`);
+  } else {
+    return next();
   }
-});
+};
 
-app.post("/tasks/:taskID", async (req, res) => {
-  // console.log(req.body);
+//middle ware to check list and delete item.
+const checkListAndDelete = async (req, res, next) => {
   const { listTitle } = req.body;
   const { taskID } = req.params;
-  // console.log(taskID, listTitle);
-  if (listTitle == "Today") {
+  if (listTitle != "Today") {
     if (!req.body.task) {
-      res.redirect("/");
-    } else if (req.body.task == "on") {
-      await Item.findByIdAndDelete(taskID);
-      res.redirect("/");
-    }
-  } else {
-    if (!req.body.task) {
-      res.redirect(`/${listTitle}`);
+      res.redirect(`/lists/${listTitle}`);
     } else {
       await List.findOneAndUpdate(
         { name: listTitle },
         { $pull: { items: { _id: taskID } } }
       );
-      res.redirect(`/${listTitle}`);
+      res.redirect(`/lists/${listTitle}`);
     }
+  } else {
+    return next();
+  }
+};
+
+app.get("/", async (req, res) => {
+  const tasks = await Item.find({});
+  res.render("lists", { listTitle: "Today", newTasks: tasks });
+});
+
+app.post("/", checkListToUpdate, async (req, res) => {
+  const { task } = req.body;
+  await Item.insertMany({ name: task });
+  res.redirect("/");
+});
+
+app.post("/tasks/:taskID", checkListAndDelete, async (req, res) => {
+  const { taskID } = req.params;
+  if (!req.body.task) {
+    res.redirect("/");
+  } else if (req.body.task == "on") {
+    await Item.findByIdAndDelete(taskID);
+    res.redirect("/");
   }
 });
 
-app.get("/:listName", async (req, res) => {
+app.get("/lists/:listName", async (req, res) => {
   const listName = _.capitalize(req.params.listName);
   const findList = await List.findOne({ name: listName });
   if (findList) {
@@ -85,6 +95,10 @@ app.get("/:listName", async (req, res) => {
     await newList.save();
     res.render("lists", { listTitle: listName, newTasks: newList.items });
   }
+});
+
+app.use((req, res) => {
+  res.render("notFound");
 });
 
 let port = process.env.PORT;

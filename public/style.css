@@ -58,3 +58,22 @@ body {
 .listFooter p{
   font-size: 1.2rem;
 }
+
+.notFoundLink{
+  text-decoration: none;
+  color: black;
+  font-size: 1.5rem;
+  padding: 30px;
+transition: ease-in;
+}
+
+.notFoundLink:hover{
+  color: white;
+  text-decoration: underline white 2px solid;
+}
+
+.notFoundImg{
+  height: 500px;
+  width: 100vw;
+  object-fit: contain;
+}
