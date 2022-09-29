@@ -112,11 +112,11 @@ app.use((req, res) => {
   res.render("notFound");
 });
 
-//Error Handler
-app.use((err, req, res, next) => {
-  const { status = 500, message = "Something went wrong" } = err;
-  res.status(status).send(message);
-});
+// //Error Handler
+// app.use((err, req, res, next) => {
+//   const { status = 500, message = "Something went wrong" } = err;
+//   res.status(status).send(message);
+// });
 
 let port = process.env.PORT;
 if (port == null || port == "") {
