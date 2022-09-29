@@ -12,9 +12,7 @@ const { Item, List } = require("./populateItemsDocDB");
 //   .catch((e) => console.log(e));
 
 mongoose
-  .connect(
-    "mongodb+srv://Gunny38:nCFS82SUgfZjZ7uA@cluster0.ypuepsl.mongodb.net/todolistDB"
-  )
+  .connect(process.env.DB_URL)
   .then(() => console.log("Connected to DB"))
   .catch((e) => console.log(e));
 
